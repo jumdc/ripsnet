@@ -1,0 +1,7 @@
+gudhi
+numpy
+tqdm
+xgboost
+tensorflow
+matplotlib
+sklearn
