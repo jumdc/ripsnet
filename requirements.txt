@@ -5,3 +5,6 @@ xgboost
 tensorflow
 matplotlib
 sklearn
+lightning
+pyrootutils
+wandb

@@ -7,6 +7,7 @@ class DenseRagged(tf.keras.layers.Layer):
         self.units = units
         self.use_bias = use_bias
         self.activation = tf.keras.activations.get(activation)
+
     def build(self, input_shape):
         last_dim = input_shape[-1]
         self.kernel = self.add_weight('kernel', shape=[last_dim, self.units], trainable=True)
@@ -15,6 +16,7 @@ class DenseRagged(tf.keras.layers.Layer):
         else:
             self.bias = None
         super(DenseRagged, self).build(input_shape)
+        
     def call(self, inputs):
         outputs = tf.ragged.map_flat_values(tf.matmul, inputs, self.kernel)
         if self.use_bias:
@@ -31,3 +33,4 @@ class PermopRagged(tf.keras.layers.Layer):
     def call(self, inputs):
         out = tf.math.reduce_sum(inputs, axis=1)
         return out
+
