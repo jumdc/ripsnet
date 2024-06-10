@@ -4,7 +4,6 @@ Adapted from the original implementation in TensorFlow: https://github.com/hense
 """
 ### ragged tensors are implemented as nested_tensors in torch
 
-import math
 import torch
 import torch.nn as nn
 
@@ -12,11 +11,8 @@ import torch.nn as nn
 class DenseNestedTensors(nn.Module):
     def __init__(self, units, last_dim, use_bias=True, activation='ReLU'):
         super(DenseNestedTensors, self).__init__()
-        # network parameters
         self.activation = getattr(nn, activation)()
         self.layer = nn.Linear(last_dim, units)
-        # nn.init.xavier_uniform_(self.layer)
-
 
     def forward(self, inputs):
         """Forward pass for the dense layer."""
