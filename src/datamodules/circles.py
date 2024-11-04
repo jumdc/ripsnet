@@ -1,6 +1,7 @@
 """Dataset for synthetic circle data."""
 
-from src.utils.create_circles import create_multiple_circles
+from src.datamodules.utils.create_circles import create_multiple_circles
+
 
 from torch.utils.data import Dataset
 

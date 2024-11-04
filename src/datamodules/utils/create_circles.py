@@ -136,23 +136,23 @@ def create_multiple_circles(N_sets_train, N_points, noisy=False, N_noise=0):
     label_train = np.zeros((N_sets_train,))
 
     if not noisy:
-        for i in tqdm(range(N_sets_train // 3)):
+        for i in range(N_sets_train // 3):
             data_train[i] = create_1_circle_clean(N_points)
             label_train[i] = 1
-        for i in tqdm(range(N_sets_train // 3, 2 * N_sets_train // 3)):
+        for i in range(N_sets_train // 3, 2 * N_sets_train // 3):
             data_train[i] = create_2_circle_clean(N_points)
             label_train[i] = 2
-        for i in tqdm(range(2 * N_sets_train // 3, N_sets_train)):
+        for i in range(2 * N_sets_train // 3, N_sets_train):
             data_train[i] = create_3_circle_clean(N_points)
             label_train[i] = 3
     else:
-        for i in tqdm(range(N_sets_train // 3)):
+        for i in range(N_sets_train // 3):
             data_train[i] = create_1_circle_noisy(N_points, N_noise)
             label_train[i] = 1
-        for i in tqdm(range(N_sets_train // 3, 2 * N_sets_train // 3)):
+        for i in range(N_sets_train // 3, 2 * N_sets_train // 3):
             data_train[i] = create_2_circle_noisy(N_points, N_noise)
             label_train[i] = 2
-        for i in tqdm(range(2 * N_sets_train // 3, N_sets_train)):
+        for i in range(2 * N_sets_train // 3, N_sets_train):
             data_train[i] = create_3_circle_noisy(N_points, N_noise)
             label_train[i] = 3
 
