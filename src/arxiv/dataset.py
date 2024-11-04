@@ -2,10 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import gudhi as gd
 
-
-####################################
-###  Creation of point clouds    ###
-####################################
+# - Create point clouds
 
 def create_circle(N_points, r, x_0, y_0):
     X = []
@@ -160,13 +157,10 @@ def create_multiple_circles(N_sets_train, N_points, noisy=False, N_noise=0):
     shuffler = np.random.permutation(len(data_train))
     label_train = label_train[shuffler]
     data_train = [data_train[p] for p in shuffler]
-
     return data_train, label_train
 
 
-############################################
-### Computation of persistence diagrams  ###
-############################################
+# - Compute persistence diagram
 
 
 def compute_PD(dataset, i):

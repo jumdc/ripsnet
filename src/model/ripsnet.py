@@ -1,8 +1,9 @@
 """Torch implementation for RipsNet.
 
 Adapted from the original implementation in TensorFlow: https://github.com/hensel-f/ripsnet
+Use nested_tensors to handle point clouds with varying number of points.
 """
-### ragged tensors are implemented as nested_tensors in torch
+
 
 import torch
 import torch.nn as nn
@@ -27,10 +28,10 @@ class PermopNestedTensors(nn.Module):
 
     def forward(self, inputs):
         """Forward pass for the permutation operator."""
-        ## we pad with 0 - to convert nested tensors to tensors
+        # -- we pad with 0 - to convert nested tensors to tensors
         out = torch.nested.to_padded_tensor(inputs, 
                                             padding=0)
-        ## we pad with 0  - identity operator for sum
+        # -- we pad with 0  - identity operator for sum
         out = torch.sum(out, dim=1, keepdim=False)
         return out
 
