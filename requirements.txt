@@ -8,3 +8,4 @@ scikit-learn
 lightning
 pyrootutils
 wandb
+pre-commit

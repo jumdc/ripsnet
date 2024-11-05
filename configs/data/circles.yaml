@@ -1,1 +1,9 @@
-_target_: 
+_target_: src.data.circles.SyntheticCircle
+num_points_train: 
+num_points_test: 
+num_points_val: 
+noisy: 
+num_points_noisy: 
+transform: null
+stage: null
+hparams: null
