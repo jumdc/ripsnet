@@ -1,38 +1,64 @@
-"""Torch implementation for RipsNet.
+from src.model.components import DenseNestedTensors, PermopNestedTensors
 
-Adapted from the original
-implementation in TensorFlow: https://github.com/hensel-f/ripsnet
-
-
-Use nested_tensors to handle point clouds with varying number of points.
-"""
+from typing import Any
+import pytorch_lightning as pl
+from torch import nn
+from hydra.utils import instantiate
 
 
-import torch
-import torch.nn as nn
+class RipsNet(pl.LightningModule):
+    """Model class for RipsNet."""
 
+    def __init__(self, cfg: Any, *args, **kwargs) -> None:
+        """Initialization of the RipsNet model."""
+        super().__init__()
+        self.cfg = cfg
+        self.model = nn.Sequential(
+            DenseNestedTensors(30, last_dim=2, use_bias=True),
+            DenseNestedTensors(20, last_dim=30, use_bias=True),
+            DenseNestedTensors(10, last_dim=20, use_bias=True),
+            PermopNestedTensors(),
+            nn.Linear(10, 50),
+            nn.ReLU(),
+            nn.Linear(50, 100),
+            nn.ReLU(),
+            nn.Linear(100, 200),
+            nn.ReLU(),
+            nn.Linear(200, cfg.model.output_dim),
+            nn.Sigmoid(),
+        )
+        self.loss = nn.MSELoss()
+        self.torch_output = []
 
-class DenseNestedTensors(nn.Module):
-    def __init__(self, units, last_dim, use_bias=True, activation="ReLU"):
-        super(DenseNestedTensors, self).__init__()
-        self.activation = getattr(nn, activation)()
-        self.layer = nn.Linear(last_dim, units)
+    def forward(self, x):
+        """Forward pass for the RipsNet."""
+        return self.model(x)
 
-    def forward(self, inputs):
-        """Forward pass for the dense layer."""
-        outputs = self.layer(inputs)
-        outputs = self.activation(outputs)
-        return outputs
+    def training_step(self, batch, batch_idx):
+        """Training step."""
+        X, feature, _ = batch
+        feature_hat = self.model(X)
+        loss = self.loss(feature_hat, feature)
+        self.log("train_loss", loss)
+        return loss
 
+    def validation_step(self, batch, batch_idx):
+        """Validation step."""
+        X, feature, _ = batch
+        feature_hat = self.model(X)
+        loss = self.loss(feature_hat, feature)
+        self.log("val_loss", loss)
+        return loss
 
-class PermopNestedTensors(nn.Module):
-    def __init__(self):
-        super(PermopNestedTensors, self).__init__()
+    def test_step(self, batch, batch_idx):
+        """Test step."""
+        X, feature, _ = batch
+        feature_hat = self.model(X)
+        loss = self.loss(feature_hat, feature)
+        self.log("test_loss", loss)
+        return loss
 
-    def forward(self, inputs):
-        """Forward pass for the permutation operator."""
-        # -- we pad with 0 - to convert nested tensors to tensors
-        out = torch.nested.to_padded_tensor(inputs, padding=0)
-        # -- we pad with 0  - identity operator for sum
-        out = torch.sum(out, dim=1, keepdim=False)
-        return out
+    def configure_optimizers(self):
+        """Configure the optimizer."""
+        optimizer = instantiate(self.cfg.optimizer, self.parameters())
+        return optimizer

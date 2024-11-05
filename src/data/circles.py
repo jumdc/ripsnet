@@ -10,7 +10,13 @@ class SyntheticCircle(Dataset):
     """Dataset for synthetic circle data."""
 
     def __init__(
-        self, num_points_train, N_noise, noisy=False, transform=None, stage="train"
+        self,
+        num_points_train,
+        N_noise,
+        noisy=False,
+        transform=None,
+        stage="train",
+        hparams=None,
     ):
         self.N_points = num_points_train
         self.N_noise = N_noise
@@ -18,7 +24,7 @@ class SyntheticCircle(Dataset):
         self.data, self.labels = create_multiple_circles(self.N_points, self.N_noise)
 
         # here add the transforms is need be
-        self.featurization, self.hparams = alpha_pi(self.data, stage=stage)
+        self.featurization, self.hparams = alpha_pi(self.data, hparams=hparams)
         self.transform = transform
 
     def __len__(self):
