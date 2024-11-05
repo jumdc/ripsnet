@@ -1,9 +1,10 @@
 _target_: src.data.circles.SyntheticCircle
-num_points_train: 
-num_points_test: 
-num_points_val: 
-noisy: 
-num_points_noisy: 
+size_train: 900
+size_test: 300
+size_val: 100
+num_points: 600
+num_points_noisy: 0
 transform: null
 stage: null
 hparams: null
+batch_size: 1024

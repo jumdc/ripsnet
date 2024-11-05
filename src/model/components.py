@@ -36,3 +36,12 @@ class PermopNestedTensors(nn.Module):
         # -- we pad with 0  - identity operator for sum
         out = torch.sum(out, dim=1, keepdim=False)
         return out
+
+
+class Permop(nn.Module):
+    def __init__(self):
+        super(Permop, self).__init__()
+
+    def forward(self, inputs):
+        out = torch.sum(inputs, dim=1, keepdim=False)
+        return out

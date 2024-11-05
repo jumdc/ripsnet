@@ -1,4 +1,10 @@
-from src.model.components import DenseNestedTensors, PermopNestedTensors
+"""Model class for RipsNet.
+
+Use nested tensors to handle point clouds with varying number of points.
+"""
+
+# from src.model.components import DenseNestedTensors, PermopNestedTensors,
+from src.model.components import Permop
 
 from typing import Any
 import pytorch_lightning as pl
@@ -14,10 +20,17 @@ class RipsNet(pl.LightningModule):
         super().__init__()
         self.cfg = cfg
         self.model = nn.Sequential(
-            DenseNestedTensors(30, last_dim=2, use_bias=True),
-            DenseNestedTensors(20, last_dim=30, use_bias=True),
-            DenseNestedTensors(10, last_dim=20, use_bias=True),
-            PermopNestedTensors(),
+            nn.Linear(2, 30),
+            nn.ReLU(),
+            nn.Linear(30, 20),
+            nn.ReLU(),
+            nn.Linear(20, 10),
+            nn.ReLU(),
+            Permop(),
+            # DenseNestedTensors(30, last_dim=2, use_bias=True),
+            # DenseNestedTensors(20, last_dim=30, use_bias=True),
+            # DenseNestedTensors(10, last_dim=20, use_bias=True),
+            # PermopNestedTensors(),
             nn.Linear(10, 50),
             nn.ReLU(),
             nn.Linear(50, 100),
