@@ -26,21 +26,24 @@ class Datamodule(LightningDataModule):
 
     def setup(self, stage=None):
         """Setup the datamodule."""
-        # if stage == "fit" or stage is None:
-        self.train_set = instantiate(self.cfg.data, stage="train")
-        self.val_set = instantiate(
-            self.cfg.data, stage="train", hparams=self.train_set.hparams
-        )
+        if stage == "fit" or stage is None:
+            self.train_set = instantiate(self.cfg.data, stage="train")
+            self.val_set = instantiate(
+                self.cfg.data, stage="train", hparams=self.train_set.hparams
+            )
         # - noise & no noise test set
-        self.test_set = instantiate(
-            self.cfg.data,
-            stage="test",
-            hparams=self.train_set.hparams,
-            num_points_noisy=0,
-        )
-        self.noisy_test_set = instantiate(
-            self.cfg.data, stage="test", hparams=self.train_set.hparams
-        )
+        if stage == "test":
+            # use a new test set for classif.
+            self.train_set = instantiate(self.cfg.data, stage="train")
+            self.test_set = instantiate(
+                self.cfg.data,
+                stage="test",
+                hparams=self.train_set.hparams,
+                num_points_noisy=0,
+            )
+            self.noisy_test_set = instantiate(
+                self.cfg.data, stage="test", hparams=self.train_set.hparams
+            )
 
     def train_dataloader(self):
         """Train dataloader."""
@@ -61,7 +64,6 @@ class Datamodule(LightningDataModule):
             shuffle=False,
             num_workers=self.cfg.machine.num_workers,
             drop_last=False,
-            # collate_fn=self.custom_collate_fn
         )
 
     def test_dataloader(self):

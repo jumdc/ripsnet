@@ -7,7 +7,7 @@ TODO:
 """
 
 from src.data.datamodule import Datamodule
-
+from src.utils.helpers import SizeDatamodule
 
 from datetime import datetime
 
@@ -17,17 +17,23 @@ import numpy as np
 from omegaconf import DictConfig
 import pytorch_lightning as pl
 from xgboost import XGBClassifier
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from sklearn.preprocessing import LabelEncoder
 
 
 @hydra.main(version_base="1.2", config_path="configs", config_name="config.yaml")
 def training(cfg: DictConfig) -> None:
-
-    # - set the seed
-    pl.seed_everything(cfg.seed)
     for cv in range(cfg.cv):
+        callbacks = []
         # - create the dataset
+        pl.seed_everything(cfg.seed + cv)
         datamodule = Datamodule(cfg)
+        callbacks = [
+            EarlyStopping(
+                monitor=cfg.monitor, patience=cfg.patience, min_delta=cfg.min_delta
+            ),
+            SizeDatamodule(),
+        ]
 
         # - create the model
         model = hydra.utils.instantiate(
@@ -40,12 +46,15 @@ def training(cfg: DictConfig) -> None:
             name = f"{cfg.logger.name}_{datetime.now().strftime('%Y-%m-%d_%Hh%M')}"
             name_cv = f"{name}_cv{cv}"
             logger = hydra.utils.instantiate(cfg.logger, name=name_cv, group=name)
-        trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+        trainer = hydra.utils.instantiate(
+            cfg.trainer, logger=logger, callbacks=callbacks
+        )
 
-        # - fit the model
+        # ---- fit the model
         trainer.fit(model, datamodule)
 
-        # - test the model.
+        # ---- test the model.
+        datamodule.setup(stage="test")  # check this -> need to have new datamodule
         classification = XGBClassifier(eval_metric="logloss", use_label_encoder=False)
         ripsnet = model.model
         ripsnet.eval()
@@ -105,7 +114,6 @@ def training(cfg: DictConfig) -> None:
             model.logger.experiment.log(
                 {"test/test_no_noise": score_test, "test/test_noise": score_test_noise}
             )
-            # model.log("test_noise", score_test_noise)
 
 
 if __name__ == "__main__":

@@ -2,12 +2,12 @@ defaults:
   - data: circles
   - model: ripsnet
   - machine: gpu
-  - optimizer: sgd
+  - optimizer: adam
   - paths: didion
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  max_epochs: 100
+  max_epochs: 1500
   val_check_interval: 1.0
   devices: ${machine.devices}
   accelerator: ${machine.accelerator}
@@ -26,6 +26,11 @@ logger:
   name: xp
   log_model: False
   offline: True
+
+# - early stopping
+patience: 200
+monitor: "val_loss"
+min_delta: 1e-5
 
 seed: 42
 cv: 1
