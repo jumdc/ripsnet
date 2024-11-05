@@ -1,0 +1,6 @@
+defaults: 
+  - data: circles
+  - model: ripsnet
+
+
+seed: 42
