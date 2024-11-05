@@ -6,8 +6,6 @@ TODO:
 [x] - finish model
 """
 
-
-# from src.model.ripsnet import DenseNestedTensors, PermopNestedTensors
 from src.data.datamodule import Datamodule
 
 
@@ -43,15 +41,24 @@ def training(cfg: DictConfig) -> None:
             name_cv = f"{name}_cv{cv}"
             logger = hydra.utils.instantiate(cfg.logger, name=name_cv, group=name)
         trainer = hydra.utils.instantiate(cfg.trainer, logger=logger)
+
+        # - fit the model
         trainer.fit(model, datamodule)
 
         # - test the model.
-        # -- add a function here for that ??
         classification = XGBClassifier(eval_metric="logloss", use_label_encoder=False)
         ripsnet = model.model
         ripsnet.eval()
-        X_train, X_val, X_test, y_train, y_val, y_test = [], [], [], [], [], []
+        X_train, X_test, X_test_noise, y_train, y_test, y_test_noise = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
 
+        # - train set
         for batch in datamodule.train_dataloader():
             X, _, label = batch
             with torch.no_grad():
@@ -59,35 +66,46 @@ def training(cfg: DictConfig) -> None:
             X_train.append(train_classif.detach().numpy())
             y_train.append(label.detach().numpy())
 
-        for batch in datamodule.val_dataloader():
-            X, _, label = batch
-            with torch.no_grad():
-                val_classif = ripsnet(X)
-            X_val.append(val_classif.detach().numpy())
-            y_val.append(label.detach().numpy())
-
-        for batch in datamodule.test_dataloader():
+        # - test sets
+        # -- no noise
+        clean_datamodule, noisy_datamodule = datamodule.test_dataloader()
+        for batch in clean_datamodule:
             X, _, label = batch
             with torch.no_grad():
                 test_classif = ripsnet(X)
             X_test.append(test_classif.detach().numpy())
             y_test.append(label.detach().numpy())
+        # -- w/ noise
+        for batch in noisy_datamodule:
+            X, _, label = batch
+            with torch.no_grad():
+                test_classif = ripsnet(X)
+            X_test_noise.append(test_classif.detach().numpy())
+            y_test_noise.append(label.detach().numpy())
 
         X_train = np.concatenate(X_train, axis=0)
-        X_val = np.concatenate(X_val, axis=0)
         X_test = np.concatenate(X_test, axis=0)
+        X_test_noise = np.concatenate(X_test_noise, axis=0)
         y_train = np.concatenate(y_train, axis=0)
-        y_val = np.concatenate(y_val, axis=0)
         y_test = np.concatenate(y_test, axis=0)
+        y_test_noise = np.concatenate(y_test_noise, axis=0)
 
-        print(y_train)
         le = LabelEncoder().fit(y_train)
         y_clean_train = le.transform(y_train)
         y_clean_test = le.transform(y_test)
+        y_clean_test_noise = le.transform(y_test_noise)
 
+        # - fit the model
         classification.fit(X_train, y_clean_train)
         score_test = classification.score(X_test, y_clean_test)
-        print(score_test)
+        score_test_noise = classification.score(X_test_noise, y_clean_test_noise)
+
+        print(score_test, "with noise", score_test_noise)
+        if cfg.log:
+            model.logger.experiment.log(
+                {"test/test_no_noise": score_test, "test/test_noise": score_test_noise}
+            )
+            # model.log("test_noise", score_test_noise)
 
 
 if __name__ == "__main__":

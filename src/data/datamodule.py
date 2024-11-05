@@ -31,7 +31,14 @@ class Datamodule(LightningDataModule):
         self.val_set = instantiate(
             self.cfg.data, stage="train", hparams=self.train_set.hparams
         )
+        # - noise & no noise test set
         self.test_set = instantiate(
+            self.cfg.data,
+            stage="test",
+            hparams=self.train_set.hparams,
+            num_points_noisy=0,
+        )
+        self.noisy_test_set = instantiate(
             self.cfg.data, stage="test", hparams=self.train_set.hparams
         )
 
@@ -59,20 +66,18 @@ class Datamodule(LightningDataModule):
 
     def test_dataloader(self):
         """Test dataloader."""
-        return DataLoader(
+        clean = DataLoader(
             self.test_set,
             batch_size=self.cfg.data.batch_size,
             shuffle=False,
             num_workers=self.cfg.machine.num_workers,
             drop_last=False,
-            # collate_fn=self.custom_collate_fn
         )
-
-    # def custom_collate_fn(self, batch):
-    #     """Collate function."""
-    #     pc, feature, label = zip(*batch)
-    #     pc = torch.nested.nested_tensor(pc, dtype=torch.float32)
-    #     feature = torch.tensor(feature, dtype=torch.float32)
-    #     label = torch.tensor(label, dtype=torch.float32)
-    #     print(pc.shape)
-    #     return batch
+        noisy = DataLoader(
+            self.noisy_test_set,
+            batch_size=self.cfg.data.batch_size,
+            shuffle=False,
+            num_workers=self.cfg.machine.num_workers,
+            drop_last=False,
+        )
+        return [clean, noisy]
