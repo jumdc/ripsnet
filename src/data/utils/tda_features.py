@@ -52,7 +52,7 @@ def alpha_pi(X, hparams=None):
 
     # - if train, compute the bandwidth
     if hparams is None:
-        vpdtr = np.vstack(pd)
+        vpdtr = np.vstack(clean_pd)
         pers = vpdtr[:, 1] - vpdtr[:, 0]
         bps_pairs = pairwise_distances(
             np.hstack([vpdtr[:, 0:1], vpdtr[:, 1:2] - vpdtr[:, 0:1]])[:200]

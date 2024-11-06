@@ -5,8 +5,11 @@ Use nested tensors to handle point clouds with varying number of points.
 
 # from src.model.components import DenseNestedTensors, PermopNestedTensors,
 from src.model.components import Permop
+from src.utils.plot import plot_reconstruction
 
 from typing import Any
+
+import wandb
 import pytorch_lightning as pl
 from torch import nn
 from hydra.utils import instantiate
@@ -61,6 +64,14 @@ class RipsNet(pl.LightningModule):
         feature_hat = self.model(X)
         loss = self.loss(feature_hat, feature)
         self.log("val_loss", loss)
+
+        if batch_idx == 0 and self.current_epoch == self.cfg.trainer.max_epochs - 1:
+            reconstructed = feature_hat
+            fig = plot_reconstruction(feature, reconstructed)
+            if isinstance(self.logger, pl.loggers.WandbLogger):
+                self.logger.experiment.log({"test/reconstruction": wandb.Image(fig)})
+            elif self.cfg.paths.name == "didion":
+                fig.savefig("checks/reconstruction.png")
         return loss
 
     def test_step(self, batch, batch_idx):

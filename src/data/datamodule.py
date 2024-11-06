@@ -28,8 +28,9 @@ class Datamodule(LightningDataModule):
         """Setup the datamodule."""
         if stage == "fit" or stage is None:
             self.train_set = instantiate(self.cfg.data, stage="train")
+            print("train_set hparams", self.train_set.hparams)
             self.val_set = instantiate(
-                self.cfg.data, stage="train", hparams=self.train_set.hparams
+                self.cfg.data, stage="val", hparams=self.train_set.hparams
             )
         # - noise & no noise test set
         if stage == "test":

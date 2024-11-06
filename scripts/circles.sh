@@ -1,3 +1,3 @@
 python main.py \
-logger.name=reproduce-circles \
+logger.name=reproduce-ripsnet-circles \
 log=True

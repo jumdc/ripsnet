@@ -7,12 +7,14 @@ TODO:
 """
 
 from src.data.datamodule import Datamodule
-from src.utils.helpers import SizeDatamodule
+from src.utils.helpers import SizeDatamodule, SanityCheckInput
+from src.utils.plot import plot_cm
 
 from datetime import datetime
 
 import hydra
 import torch
+import wandb
 import numpy as np
 from omegaconf import DictConfig
 import pytorch_lightning as pl
@@ -25,6 +27,7 @@ from sklearn.preprocessing import LabelEncoder
 def training(cfg: DictConfig) -> None:
     for cv in range(cfg.cv):
         callbacks = []
+        # ----- RipsNet ----- #
         # - create the dataset
         pl.seed_everything(cfg.seed + cv)
         datamodule = Datamodule(cfg)
@@ -33,6 +36,7 @@ def training(cfg: DictConfig) -> None:
                 monitor=cfg.monitor, patience=cfg.patience, min_delta=cfg.min_delta
             ),
             SizeDatamodule(),
+            SanityCheckInput(),
         ]
 
         # - create the model
@@ -50,10 +54,10 @@ def training(cfg: DictConfig) -> None:
             cfg.trainer, logger=logger, callbacks=callbacks
         )
 
-        # ---- fit the model
+        # ---- fit the model ---- #
         trainer.fit(model, datamodule)
 
-        # ---- test the model.
+        # ---- test the model. ---- #
         datamodule.setup(stage="test")  # check this -> need to have new datamodule
         classification = XGBClassifier(eval_metric="logloss", use_label_encoder=False)
         ripsnet = model.model
@@ -75,7 +79,7 @@ def training(cfg: DictConfig) -> None:
             X_train.append(train_classif.detach().numpy())
             y_train.append(label.detach().numpy())
 
-        # - test sets
+        # ----- test sets ----- #
         # -- no noise
         clean_datamodule, noisy_datamodule = datamodule.test_dataloader()
         for batch in clean_datamodule:
@@ -104,16 +108,32 @@ def training(cfg: DictConfig) -> None:
         y_clean_test = le.transform(y_test)
         y_clean_test_noise = le.transform(y_test_noise)
 
-        # - fit the model
+        # ---- fit the test model ---- #
         classification.fit(X_train, y_clean_train)
+        y_pred = classification.predict(X_test)
+        y_pred_noise = classification.predict(X_test_noise)
+
+        # --score
         score_test = classification.score(X_test, y_clean_test)
         score_test_noise = classification.score(X_test_noise, y_clean_test_noise)
-
-        print(score_test, "with noise", score_test_noise)
+        print(f"Test score: {score_test}, Test score noise: {score_test_noise}")
+        # --confusion matrix
+        cm = plot_cm(y_clean_test, y_pred, dataset=cfg.data._target_)
+        cm_noise = plot_cm(
+            y_clean_test_noise, y_pred_noise, dataset=cfg.data._target_, name="Noisy"
+        )
         if cfg.log:
             model.logger.experiment.log(
-                {"test/test_no_noise": score_test, "test/test_noise": score_test_noise}
+                {
+                    "test/test_no_noise": score_test,
+                    "test/test_noise": score_test_noise,
+                    "test/cm": wandb.Image(cm),
+                    "test/cm_noise": wandb.Image(cm_noise),
+                }
             )
+        elif cfg.paths.name == "didion":
+            cm.savefig("checks/cm.png")
+            cm_noise.savefig("checks/cm_noise.png")
 
 
 if __name__ == "__main__":

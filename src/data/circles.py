@@ -21,7 +21,7 @@ class SyntheticCircle(Dataset):
         stage="train",
         hparams=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(SyntheticCircle, self).__init__()
         size = (
@@ -29,6 +29,7 @@ class SyntheticCircle(Dataset):
             if stage == "train"
             else (size_test if stage == "test" else size_val)
         )
+        print(f"Creating {size} samples for {stage} dataset.")
 
         self.data, self.labels = create_multiple_circles(
             size=size,

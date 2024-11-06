@@ -57,3 +57,4 @@ outputs/*
 lightning_logs/*
 *.pyc
 *.log
+checks/*

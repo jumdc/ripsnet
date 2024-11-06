@@ -2,12 +2,12 @@ defaults:
   - data: circles
   - model: ripsnet
   - machine: gpu
-  - optimizer: adam
+  - optimizer: adamw
   - paths: didion
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  max_epochs: 1500
+  max_epochs: 1000
   val_check_interval: 1.0
   devices: ${machine.devices}
   accelerator: ${machine.accelerator}
