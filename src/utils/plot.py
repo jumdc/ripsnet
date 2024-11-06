@@ -9,20 +9,29 @@ import numpy as np
 
 def plot_reconstruction(ground_truth, reconstruction):
     # plot 4 reconstructions and the ground truth
-    fig, axs = plt.subplots(ncols=2, nrows=4, squeeze=True, figsize=(10, 10))
     choices = np.random.choice(len(ground_truth), 4)
+    views = len(reconstruction) if isinstance(reconstruction, list) else 1
+    fig, axs = plt.subplots(ncols=views + 1, nrows=4, squeeze=True, figsize=(10, 10))
     for idx, choice in enumerate(choices):
-        prediction = reconstruction[choice].cpu().detach().numpy().reshape(50, 50)
+        # -- plot the ground truth
         truth = ground_truth[choice].cpu().detach().numpy().reshape(50, 50)
+
         axs[idx, 0].imshow(np.flip(truth, 0), cmap="plasma")
         axs[idx, 0].set_title("Ground Truth")
         axs[idx, 0].axes.xaxis.set_visible(False)
         axs[idx, 0].axes.yaxis.set_visible(False)
 
-        axs[idx, 1].imshow(np.flip(prediction, 0), cmap="plasma")
-        axs[idx, 1].set_title("Prediction")
-        axs[idx, 1].axes.xaxis.set_visible(False)
-        axs[idx, 1].axes.yaxis.set_visible(False)
+        # -- plot the reconstruction for each view
+        for idx_col in range(views):
+            prediction = (
+                reconstruction[idx_col][choice] if views > 1 else reconstruction[choice]
+            )
+            prediction = prediction.cpu().detach().numpy().reshape(50, 50)
+
+            axs[idx, 1 + idx_col].imshow(np.flip(prediction, 0), cmap="plasma")
+            axs[idx, 1 + idx_col].set_title(f"Prediction - View {idx_col}")
+            axs[idx, 1 + idx_col].axes.xaxis.set_visible(False)
+            axs[idx, 1 + idx_col].axes.yaxis.set_visible(False)
 
     fig.suptitle("Reconstruction of Persistence Images")
     plt.close()

@@ -17,9 +17,10 @@ class SyntheticCircle(Dataset):
         size_val,
         num_points,
         num_points_noisy,
-        transform=None,
+        transforms=None,
         stage="train",
         hparams=None,
+        loss=None,
         *args,
         **kwargs,
     ):
@@ -31,6 +32,7 @@ class SyntheticCircle(Dataset):
         )
         print(f"Creating {size} samples for {stage} dataset.")
 
+        # - create the dataset
         self.data, self.labels = create_multiple_circles(
             size=size,
             num_points=num_points,
@@ -40,15 +42,24 @@ class SyntheticCircle(Dataset):
 
         # - TDA features
         self.featurization, self.hparams = alpha_pi(self.data, hparams=hparams)
-        # - do the transform is necessary.
-        self.transform = transform
+
+        # - Multiview ?
+        self.multiview = (
+            True if (loss != "torch.nn.MSELoss" and loss is not None) else False
+        )
+        if self.multiview:
+            self.transforms = transforms
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # pc = torch.nested.nested_tensor(self.data[idx], dtype=torch.float32)
+        # - input point cloud
         pc = torch.tensor(self.data[idx], dtype=torch.float32)
+        if self.multiview:
+            pc = self.transforms(pc)
+        # - feature
         feature = torch.tensor(self.featurization[idx], dtype=torch.float32)
+        # - label
         label = torch.tensor(self.labels[idx], dtype=torch.float32)
         return pc, feature, label

@@ -4,6 +4,7 @@ defaults:
   - machine: gpu
   - optimizer: adamw
   - paths: didion
+  - loss: mse
 
 trainer:
   _target_: pytorch_lightning.Trainer

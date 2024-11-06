@@ -31,8 +31,8 @@ def alpha_pi(X, hparams=None):
     pd, hparams_used = [], {}
 
     if hparams is None:
-        # use the first 30 samples to compute the max_d
-        ds = [pairwise_distances(X).flatten() for X in X[:30]]
+        # use the first 100 samples to compute the max_d
+        ds = [pairwise_distances(pc).flatten() for pc in X]
         max_d = np.max(np.concatenate(ds))
         hparams_used["max_d"] = max_d
     else:
@@ -55,7 +55,9 @@ def alpha_pi(X, hparams=None):
         vpdtr = np.vstack(clean_pd)
         pers = vpdtr[:, 1] - vpdtr[:, 0]
         bps_pairs = pairwise_distances(
-            np.hstack([vpdtr[:, 0:1], vpdtr[:, 1:2] - vpdtr[:, 0:1]])[:200]
+            np.hstack([vpdtr[:, 0:1], vpdtr[:, 1:2] - vpdtr[:, 0:1]])[
+                :200
+            ]  # - only 200 pairs ?
         ).flatten()
         ppers = bps_pairs[np.argwhere(bps_pairs > 1e-5).ravel()]
         sigma = np.quantile(ppers, 0.2)

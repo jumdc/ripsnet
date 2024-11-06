@@ -1,4 +1,7 @@
 _target_: src.data.circles.SyntheticCircle
+defaults: 
+  - transforms: isometries
+  
 size_train: 900
 size_test: 300
 size_val: 100
@@ -8,3 +11,4 @@ transform: null
 stage: null
 hparams: null
 batch_size: 1024
+loss: ${loss._target_}

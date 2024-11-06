@@ -1,4 +1,7 @@
+"""Helper functions for the sanity checks."""
+
 import wandb
+import numpy as np
 import pytorch_lightning as pl
 from matplotlib import pyplot as plt
 
@@ -41,32 +44,23 @@ class SanityCheckInput(pl.callbacks.Callback):
         point_cloud, features, _ = next(iteration)
         show(point_cloud, features, pl_module.logger, machine=pl_module.cfg.paths.name)
 
-    # def on_validation_epoch_end(
-    #     self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
-    # ):
-    #     iteration = iter(trainer.val_dataloaders)
-    #     inputs, _ = next(iteration)
-    #     show(inputs, pl_module.logger, machine=pl_module.cfg.paths.___config_name___,
-    # name=pl_module.global_step)
-
 
 def show(inputs, features, logger, machine) -> None:
     """Show point cloud."""
     views = len(inputs) if isinstance(inputs, list) else 1
-
-    # batch = inputs[0].shape[0] if views > 1 else inputs.shape[0]
-    fig, axs = plt.subplots(ncols=views * 2, nrows=5, squeeze=True, figsize=(15, 15))
-    # choices = np.random.choice(len(ground_truth), 4)
+    fig, axs = plt.subplots(ncols=views + 1, nrows=4, squeeze=True, figsize=(15, 15))
     # - for 5 in the batch
-    for idx in range(5):
+    for idx in range(4):
         nb = idx
         for idx_col in range(views):
             pc = inputs[idx_col][nb] if views > 1 else inputs[nb]
-            feature = features[idx_col][nb] if views > 1 else features[nb]
             axs[idx, idx_col].scatter(pc[:, 0], pc[:, 1], s=1, c="rosybrown", alpha=0.5)
-            axs[idx, idx_col + 1].imshow(
-                feature.cpu().numpy().reshape(50, 50), cmap="plasma"
-            )
+            axs[idx, idx_col].set_title(f"Input - View {idx_col}")
+        feature = features[nb]
+        axs[idx, -1].imshow(
+            np.flip(feature.cpu().numpy().reshape(50, 50), 0), cmap="plasma"
+        )
+        axs[idx, -1].set_title("Featurization")
 
     # - log sanity checks
     if isinstance(logger, pl.loggers.WandbLogger):

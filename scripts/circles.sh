@@ -1,3 +1,4 @@
 python main.py \
 logger.name=reproduce-ripsnet-circles \
-log=True
+log=True \
+cv=10

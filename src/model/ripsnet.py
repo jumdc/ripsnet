@@ -43,17 +43,25 @@ class RipsNet(pl.LightningModule):
             nn.Linear(200, cfg.model.output_dim),
             nn.Sigmoid(),
         )
-        self.loss = nn.MSELoss()
+        # self.loss = nn.MSELoss()
+        self.loss = instantiate(cfg.loss)
+        self.mutiview = False if isinstance(self.loss, nn.MSELoss) else True
+
         self.torch_output = []
 
     def forward(self, x):
         """Forward pass for the RipsNet."""
         return self.model(x)
 
+    def multiview_forward(self, x):
+        """Forward pass for the RipsNet."""
+        return [self.model(x[0]), self.model(x[1])]
+
     def training_step(self, batch, batch_idx):
         """Training step."""
         X, feature, _ = batch
-        feature_hat = self.model(X)
+
+        feature_hat = self.model(X) if not self.mutiview else self.multiview_forward(X)
         loss = self.loss(feature_hat, feature)
         self.log("train_loss", loss)
         return loss
@@ -61,13 +69,12 @@ class RipsNet(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         """Validation step."""
         X, feature, _ = batch
-        feature_hat = self.model(X)
+        # feature_hat = self.model(X)
+        feature_hat = self.model(X) if not self.mutiview else self.multiview_forward(X)
         loss = self.loss(feature_hat, feature)
         self.log("val_loss", loss)
-
         if batch_idx == 0 and self.current_epoch == self.cfg.trainer.max_epochs - 1:
-            reconstructed = feature_hat
-            fig = plot_reconstruction(feature, reconstructed)
+            fig = plot_reconstruction(feature, feature_hat)
             if isinstance(self.logger, pl.loggers.WandbLogger):
                 self.logger.experiment.log({"test/reconstruction": wandb.Image(fig)})
             elif self.cfg.paths.name == "didion":

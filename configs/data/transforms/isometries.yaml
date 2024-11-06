@@ -1,0 +1,3 @@
+_target_: src.data.transforms.transforms.MultiViewIsometricTransform
+rotation_range: [-90, 90]
+translation_range: [-10, 10]

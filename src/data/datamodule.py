@@ -4,8 +4,6 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from hydra.utils import instantiate
 
-from copy import deepcopy
-
 
 class Datamodule(LightningDataModule):
     """Multimodal datamodule class"""
@@ -19,31 +17,35 @@ class Datamodule(LightningDataModule):
             cfg dict.
         """
         super().__init__()
-        self.cfg = deepcopy(cfg)
+        self.cfg = cfg
         self.fold = fold
         self.stage = stage
+        self.feature_hparams = None
         self.train_set, self.val_set, self.test_set = None, None, None
 
     def setup(self, stage=None):
         """Setup the datamodule."""
         if stage == "fit" or stage is None:
             self.train_set = instantiate(self.cfg.data, stage="train")
-            print("train_set hparams", self.train_set.hparams)
+            self.feature_hparams = self.train_set.hparams
             self.val_set = instantiate(
-                self.cfg.data, stage="val", hparams=self.train_set.hparams
+                self.cfg.data, stage="val", hparams=self.feature_hparams
             )
         # - noise & no noise test set
         if stage == "test":
             # use a new test set for classif.
-            self.train_set = instantiate(self.cfg.data, stage="train")
+            self.train_set = instantiate(
+                self.cfg.data, stage="train", hparams=self.feature_hparams, loss=None
+            )
             self.test_set = instantiate(
                 self.cfg.data,
                 stage="test",
-                hparams=self.train_set.hparams,
+                hparams=self.feature_hparams,
                 num_points_noisy=0,
+                loss=None,
             )
             self.noisy_test_set = instantiate(
-                self.cfg.data, stage="test", hparams=self.train_set.hparams
+                self.cfg.data, stage="test", hparams=self.feature_hparams, loss=None
             )
 
     def train_dataloader(self):
